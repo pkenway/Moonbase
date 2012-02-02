@@ -1,0 +1,212 @@
+<html>
+	<head>
+		<script type="text/javascript" src="jquery-1.7.1.min.js"></script>
+		
+		<script type="text/javascript" src="jquery-ui-1.8.17.custom.min.js"></script>
+		
+		<script type="text/javascript" src="moonbase.gameboard.js"></script>
+		<script type="text/javascript" src="moonbase.playstate.js"></script>
+		<script type="text/javascript" src="moonbase.mapgen.js"></script>
+		</head>
+		<style type="text/css">
+			#tblGameGrid {
+				background-color:green;
+			}
+			td.unexplored {
+				background-color:black;
+			}
+			td.plains {
+				background-color:green;
+				background-image: url('');
+			}
+			td.gorge {
+				background-color:red;
+			}
+			td.hill {
+				background-color:brown;
+				}
+			td.crater {
+				background-color:blue;
+			}
+			td.mine {
+				background-image:url('images/mine.png');
+			}
+			td.solarpanel {
+				background-image:url('images/solar-panel.png');
+			}
+			td.biodome {
+				background-image:url('images/dome.jpg');
+			}
+			td.ccenter {
+				background-image:url('images/dish.png');
+			}
+			td.powered {
+				border:solid 1px yellow!important;
+			}
+			#tblGameGrid td {
+				border: solid 1px black;
+				height:75px;
+				width:75px;
+				background-repeat:no-repeat;
+			}
+			body {
+				/*background-image :url('images/bg.jpg');*/
+			}
+			
+			.currentAction {
+				border: solid 1px red;
+			}
+		</style>
+	<body>
+		<table id="tblGameGrid">
+		</table>
+		<a href="javascript:void(0)" id="btnNextTurn">Next Turn</a>
+		
+		<div id="divState">
+			Money:<span class="money"></span><br/>
+			Energy: <span class="energy"></span><br/>
+			Score: <span class="score"></span><br/>
+			Turn: <span class="turn"></span><br/>
+		</div>
+		
+		
+		<table id="buildings">
+			<tr>
+				<td class="building"><img src="images/dish.png" title="ccenter"/></td>
+				<td  class="building"><img src="images/solar-panel.png" title="solarpanel" /></td>
+				<td  class="building"><img src="images/mine.png" title="mine"/></td>
+			</tr>
+			<tr>
+				<td  class="building"><img src="images/dome.jpg" title="biodome"/></td>
+				<td  class="building">Launch Pad</td>
+				<td  class="building">Power Grid</td>
+			</tr>
+			<tr>
+				<td  class="building">Barracks</td>
+				<td>&nbsp;</td>
+				<td>&nbsp;</td>
+			</tr>
+		</table>
+		
+		<div id="divDebug"></div>
+		
+		<script type="text/javascript">
+			var gameparams = {
+				map: {
+					width:10,
+					height:10,
+					randomstart:false,
+					startingterrain:"plains",
+					aliencount:2
+				},
+				turnCount:50,
+				terrain: ["plains","plains","plains","plains","hill","crater","gorge"],
+				buildings: {
+					ccenter:{cost:40,
+						radius:{
+							plains:4,
+							hill:6,
+							crater:3
+						}
+					},
+					solarpanel:{cost:20,
+						radius:{
+							plains:2,
+							hill:3,
+							crater:2
+						}
+					},
+					mine:{cost:50,
+						income:{
+							plains:10,
+							hill:15,
+							crater:10
+						}
+					},
+					biodome:{cost:50,
+						value: {
+							plains:2,
+							hill:1,
+							crater:3
+						}
+					}
+				}
+			};
+			var playState = {
+				energy:100,
+				money:100,
+				points:0,
+				turn:1
+			};
+			function statusMsg(msg) {
+				$("#divDebug").html(msg);
+			}
+			
+			$(document).ready(function() {
+				//load a grid of spaces
+				$("#tblGameGrid").gameboard({
+					width:gameparams.map.width,
+					height:gameparams.map.height,
+					cellClick:function(x,y) {
+						var cellData = $("#tblGameGrid").gameboard("getCellData",x,y);
+						var state = $("#divState").playstate("getState");
+						
+						//if the cell is unexplored, scan it
+						if(!cellData.explored) {
+							if(state.energy < 20) {
+								statusMsg("Not enough energy to scan");
+								return;
+							}
+							cellData.explored = 1;
+							$("#tblGameGrid").gameboard("setCellData",x,y,cellData);
+							state.energy -= 20;
+							$("#divState").playstate("setState",state);
+						
+						} else { //otherwise, show cell details
+						
+						}
+					},
+					tryBuy:function(cost) {
+						var state = $("#divState").playstate("getState");
+						
+						if(cost > state.money)  return false;
+						state.money -= cost;
+						$("#divState").playstate("setState",state);
+						return true;
+					},
+					statusMsg:statusMsg,
+					gameparams:gameparams
+				});
+				
+				//load board data
+				$("#tblGameGrid").gameboard("loadGridData",generateMap(gameparams));
+				
+				$("#btnNextTurn").click(function() {
+					$("#tblGameGrid").gameboard("checkPowered");
+				
+					$("#divState").playstate("nextturn");
+				});
+				
+				
+				$("#divState").playstate({
+					state:{money:100,energy:100,score:0,turn:1},
+					gameparams:gameparams
+				});
+				
+				$("#buildings .building img").draggable({helper:"clone"});
+			});
+			
+			function getBlankTerrain(terrainType) {
+				return {
+					terrain: terrainType,
+					building: "",
+					explored:0,
+					powered:0,
+					energy:0
+				}
+			}
+		
+		</script>
+	</body>
+</html>
+	
