@@ -38,7 +38,7 @@ function generateMap(gameparams) {
 	mapResult[ccy][ccx].explored=1;
 	//add some aliens
 	var aliencount = 0;
-	while(aliencount < gameparams.map.aliencount) {
+	while(aliencount < gameparams.aliens.startingCount) {
 		var x = Math.floor(Math.random()*gameparams.map.width);
 		var y = Math.floor(Math.random()*gameparams.map.height);
 		//don't add aliens to the starting location, or where they already are

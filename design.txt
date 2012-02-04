@@ -1,0 +1,46 @@
+MOON BASE COLONY
+
+Grid of squares (size variable)
+Spend money to build buildings on squares
+possible buildings
+-Control Center (starting building, uses energy to scan unrevealed locations)
+-Solar Array (powers buildings)
+-mine (generates money)
+-bio dome (generates money if powered)
+-power lines (connects buildings to power grid)
+-rocket array clears hostile tiles in its radius
+
+Terrain types
+-plains (no bonuses or penalties)
+-hills (+ to solar collection, or mining)
+-crater (cheaper bio dome)
+-gorge (cannot build)
+-aliens (cannot build until cleared)
+
+
+Solar Panel
+	plains,crater
+		powers all buildings up to 2 tiles away
+	hill
+		powers all buildings up to 3 tiles away
+		
+Mine
+	plains,crater
+		+20 money per turn
+	hill 
+		+40 money per turn
+		
+Bio Dome
+	plains,hill
+		+1 point
+	crater 
+		+2 points
+		
+Rocket Array
+	plains, crater
+		clears aliens  within 2 tiles
+	hill
+		clears aliens within 3 tiles
+		
+
+	

@@ -7,143 +7,43 @@
 		<script type="text/javascript" src="moonbase.gameboard.js"></script>
 		<script type="text/javascript" src="moonbase.playstate.js"></script>
 		<script type="text/javascript" src="moonbase.mapgen.js"></script>
+		<script type="text/javascript" src="moonbase.params.js"></script>
+		<link rel="stylesheet" href="moonbase.css"/>
 		</head>
-		<style type="text/css">
-			#tblGameGrid {
-				background-color:green;
-			}
-			td.unexplored {
-				background-color:black;
-			}
-			td.plains {
-				background-color:green;
-				background-image: url('');
-			}
-			td.gorge {
-				background-color:red;
-			}
-			td.hill {
-				background-color:brown;
-				}
-			td.crater {
-				background-color:blue;
-			}
-			td.mine {
-				background-image:url('images/mine.png');
-			}
-			td.solarpanel {
-				background-image:url('images/solar-panel.png');
-			}
-			td.biodome {
-				background-image:url('images/dome.jpg');
-			}
-			td.ccenter {
-				background-image:url('images/dish.png');
-			}
-			td.powered {
-				border:solid 1px yellow!important;
-			}
-			td.aliens {
-				background-color:white;
-			}
-			#tblGameGrid td {
-				border: solid 1px black;
-				height:75px;
-				width:75px;
-				background-repeat:no-repeat;
-			}
-			body {
-				/*background-image :url('images/bg.jpg');*/
-			}
-			
-			.currentAction {
-				border: solid 1px red;
-			}
-			#divState{
-				float:right;
-				border:solid 1px black;
-			}
-		</style>
 	<body>
-	
 		<div id="divState">
-			Money:<span class="money"></span><br/>
-			Score: <span class="score"></span><br/>
-			Turns Left: <span class="turn"></span><br/>
+			Money:<span class="money"></span>
+			Score: <span class="score"></span>
+			Energy: <span class="energy"></span>
+			Turns Left: <span class="turn"></span>
 		</div>
 		
 		<table id="buildings" style="float:right">
 			<tr>
-				<td class="building"><img src="images/dish.png" title="ccenter"/></td>
-				<td  class="building"><img src="images/solar-panel.png" title="solarpanel" /></td>
-				<td  class="building"><img src="images/mine.png" title="mine"/></td>
+				<td class="building"><img src="images/ccenter1.png" title="ccenter"/></td>
+				<td  class="building"><img src="images/solarpanel1.png" title="solarpanel" /></td>
+				<td  class="building"><img src="images/mine1.png" title="mine"/></td>
 			</tr>
 			<tr>
-				<td  class="building"><img src="images/dome.jpg" title="biodome"/></td>
-				<td  class="building">Launch Pad</td>
-				<td  class="building">Power Grid</td>
-			</tr>
-			<tr>
-				<td  class="building">Barracks</td>
-				<td>&nbsp;</td>
-				<td>&nbsp;</td>
+				<td  class="building"><img src="images/biodome1.png" title="biodome"/></td>
+				<td  class="building"><img src="images/battery1.png" title="battery"/></td>
+				<td  class="building"><img src="images/powerlines1.png" title="powerlines"/></td>
 			</tr>
 		</table>
 		<table id="tblGameGrid">
 		</table>
 		
 		<a href="javascript:void(0)" id="btnNextTurn">Next Turn</a>
-		
-		
-		
-		
+		<a href="javascript:void(0)" id="btnFireLaser">Fire Laser</a>
 		<div id="divDebug"></div>
 		
 		<script type="text/javascript">
-			var gameparams = {
-				map: {
-					width:10,
-					height:10,
-					randomstart:false,
-					startingterrain:"plains",
-					aliencount:10
-				},
-				turnCount:50,
-				terrain: ["plains","plains","plains","plains","hill","crater","gorge"],
-				buildings: {
-					ccenter:{cost:40,
-						radius:{
-							plains:4,
-							hill:6,
-							crater:3
-						}
-					},
-					solarpanel:{cost:20,
-						radius:{
-							plains:2,
-							hill:3,
-							crater:2
-						}
-					},
-					mine:{cost:50,
-						income:{
-							plains:10,
-							hill:15,
-							crater:10
-						}
-					},
-					biodome:{cost:50,
-						value: {
-							plains:2,
-							hill:1,
-							crater:3
-						}
-					}
-				}
-			};
+			
 			function statusMsg(msg) {
 				$("#divDebug").html(msg);
 			}
+			
+			var isLaserFiring = false;
 			
 			$(document).ready(function() {
 				//load a grid of spaces
@@ -152,7 +52,10 @@
 					height:gameparams.map.height,
 					action:function(type) {
 						var state = $("#divState").playstate("getState");
-						state.money += $("#tblGameGrid").gameboard("harvest");
+						var harvested =  $("#tblGameGrid").gameboard("harvest"); 
+						state.money += harvested.money;
+						state.score += harvested.score;
+						state.energy += harvested.energy;
 						$("#divState").playstate("setState",state);
 						$("#divState").playstate("nextTurn");
 					},
@@ -164,6 +67,15 @@
 						$("#divState").playstate("setState",state);
 						return true;
 					},
+					tryFireLaser:function() {
+						var state = $("#divState").playstate("getState");
+						
+						if(state.energy < gameparams.laserenergycost) {
+							return false;
+						}
+						state.energy -= gameparams.laserenergycost;
+						return true;
+					},
 					statusMsg:statusMsg,
 					gameparams:gameparams
 				});
@@ -172,15 +84,21 @@
 				$("#tblGameGrid").gameboard("loadGridData",generateMap(gameparams));
 				
 				$("#btnNextTurn").click(function() {
-					$("#tblGameGrid").gameboard("checkPowered");
-				
 					$("#divState").playstate("nextturn");
 				});
 				
+				$("#btnFireLaser").click(function() {
+					statusMsg("Click a tile to fire the laser");
+					$("#tblGameGrid").gameboard("setInterfaceMode","laser");
+				});
 				
 				$("#divState").playstate({
 					state:{money:100,score:0,turnsremaining:gameparams.turnCount},
-					gameparams:gameparams
+					gameparams:gameparams,
+					onGameEnd:function(score) {
+						$("#tblGameGrid").gameboard("exploreAll");
+						alert("Game over.  Final score: " + score);
+					}
 				});
 				
 				$("#buildings .building img").draggable({helper:"clone"});

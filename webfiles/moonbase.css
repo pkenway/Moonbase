@@ -1,0 +1,69 @@
+#tblGameGrid {
+	background-color:transparent;
+}
+td.unexplored {
+	background-color:transparent;
+}
+td.plains {
+	background-color:#b3b3b3;
+}
+td.gorge {
+	background-image:url('images/gorge.png');
+}
+td.hill {
+	background-image:url('images/hill1.png');
+	}
+td.crater {
+	background-image:url('images/crater1.png');
+}
+td.mine {
+	background-image:url('images/mine1.png');
+}
+td.solarpanel {
+	background-image:url('images/solarpanel1.png');
+}
+td.biodome {
+	background-image:url('images/biodome1.png');
+}
+td.ccenter {
+	background-image:url('images/ccenter1.png');
+}
+td.powered {
+	border:solid 1px yellow!important;
+}
+td.aliens {
+	background-image:url('images/aliens1.png');
+}
+td.battery {
+	background-image:url('images/battery1.png');
+}
+td.powerlines {
+	background-image:url('images/powerlines1.png');
+}
+#tblGameGrid td {
+	border: solid 1px white;
+	height:64px;
+	width:64px;
+	background-repeat:no-repeat;
+}
+body {
+	background-image :url('images/starsandnebula250a.jpg');
+	color:white;
+}
+
+.currentAction {
+	border: solid 1px red;
+}
+#divState{
+	background-color:white;
+	color:black;
+}
+a:link{
+	color:white!important;
+}
+a:hover{
+	color:white;
+}
+a:visited{
+	color:white;
+}
