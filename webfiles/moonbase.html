@@ -43,6 +43,9 @@
 			td.powered {
 				border:solid 1px yellow!important;
 			}
+			td.aliens {
+				background-color:white;
+			}
 			#tblGameGrid td {
 				border: solid 1px black;
 				height:75px;
@@ -56,21 +59,20 @@
 			.currentAction {
 				border: solid 1px red;
 			}
+			#divState{
+				float:right;
+				border:solid 1px black;
+			}
 		</style>
 	<body>
-		<table id="tblGameGrid">
-		</table>
-		<a href="javascript:void(0)" id="btnNextTurn">Next Turn</a>
-		
+	
 		<div id="divState">
 			Money:<span class="money"></span><br/>
-			Energy: <span class="energy"></span><br/>
 			Score: <span class="score"></span><br/>
-			Turn: <span class="turn"></span><br/>
+			Turns Left: <span class="turn"></span><br/>
 		</div>
 		
-		
-		<table id="buildings">
+		<table id="buildings" style="float:right">
 			<tr>
 				<td class="building"><img src="images/dish.png" title="ccenter"/></td>
 				<td  class="building"><img src="images/solar-panel.png" title="solarpanel" /></td>
@@ -87,6 +89,13 @@
 				<td>&nbsp;</td>
 			</tr>
 		</table>
+		<table id="tblGameGrid">
+		</table>
+		
+		<a href="javascript:void(0)" id="btnNextTurn">Next Turn</a>
+		
+		
+		
 		
 		<div id="divDebug"></div>
 		
@@ -97,7 +106,7 @@
 					height:10,
 					randomstart:false,
 					startingterrain:"plains",
-					aliencount:2
+					aliencount:10
 				},
 				turnCount:50,
 				terrain: ["plains","plains","plains","plains","hill","crater","gorge"],
@@ -132,12 +141,6 @@
 					}
 				}
 			};
-			var playState = {
-				energy:100,
-				money:100,
-				points:0,
-				turn:1
-			};
 			function statusMsg(msg) {
 				$("#divDebug").html(msg);
 			}
@@ -147,24 +150,11 @@
 				$("#tblGameGrid").gameboard({
 					width:gameparams.map.width,
 					height:gameparams.map.height,
-					cellClick:function(x,y) {
-						var cellData = $("#tblGameGrid").gameboard("getCellData",x,y);
+					action:function(type) {
 						var state = $("#divState").playstate("getState");
-						
-						//if the cell is unexplored, scan it
-						if(!cellData.explored) {
-							if(state.energy < 20) {
-								statusMsg("Not enough energy to scan");
-								return;
-							}
-							cellData.explored = 1;
-							$("#tblGameGrid").gameboard("setCellData",x,y,cellData);
-							state.energy -= 20;
-							$("#divState").playstate("setState",state);
-						
-						} else { //otherwise, show cell details
-						
-						}
+						state.money += $("#tblGameGrid").gameboard("harvest");
+						$("#divState").playstate("setState",state);
+						$("#divState").playstate("nextTurn");
 					},
 					tryBuy:function(cost) {
 						var state = $("#divState").playstate("getState");
@@ -189,23 +179,12 @@
 				
 				
 				$("#divState").playstate({
-					state:{money:100,energy:100,score:0,turn:1},
+					state:{money:100,score:0,turnsremaining:gameparams.turnCount},
 					gameparams:gameparams
 				});
 				
 				$("#buildings .building img").draggable({helper:"clone"});
 			});
-			
-			function getBlankTerrain(terrainType) {
-				return {
-					terrain: terrainType,
-					building: "",
-					explored:0,
-					powered:0,
-					energy:0
-				}
-			}
-		
 		</script>
 	</body>
 </html>

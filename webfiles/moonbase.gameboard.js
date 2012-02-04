@@ -4,10 +4,9 @@
 			options: {
 				width:10,
 				height:10,
-				cellClick:function(x,y,cellData) {
-				},
 				statusMsg:function(text){},
-				tryBuy:function(cost){}
+				tryBuy:function(cost){},
+				action:function(type){}
 			},
 			_init: function() {
 				for(var y=0;y<this.options.height;y++) {
@@ -20,7 +19,13 @@
 				var that = this;
 				this.element.find("td").click(function() {
 					var coords = that.getCoords(this);
-					that.options.cellClick(coords.x,coords.y);
+					var celldata = that.getCellData(coords.x,coords.y);
+					if(celldata.canexplore) {
+						celldata.explored = 1;
+						that.setCellData(coords.x,coords.y,celldata);
+						that.updateGrid();
+						that.options.action("explore");
+					}
 				}).droppable({
 					accept:"img",
 					drop:function(event,ui) {
@@ -32,15 +37,25 @@
 							statusMsg("Cannot place a building on an unexplored tile");
 							return;
 						}
+						
+						if(cellData.aliens) {
+							statusMsg("Cannot build on a tile with hostile creatures.");
+							return;
+						}
 						//TODO: look up building cost
 						if(!that.options.tryBuy(that.options.gameparams.buildings[buildingType].cost)) {
 							statusMsg("Not enough money.");
 							return;
 						}
+						if(cellData.terrain=="gorge") {
+							statusMsg("Cannot build on in that terrain.");
+							return;
+						}
 						cellData.building = buildingType;
 						var coords = that.getCoords(this);
 						that.setCellData(coords.x,coords.y,cellData);
-						//
+						that.updateGrid();
+						that.options.action("buy");
 					}});
 			},
 			getCoords: function(cell) {
@@ -65,6 +80,8 @@
 					gridClass="unexplored";
 				} else if(data.building != "") {
 					gridClass = data.building;
+				} else if(data.aliens == 1){
+					gridClass="aliens";
 				} else {
 					gridClass = data.terrain;
 				}
@@ -90,6 +107,7 @@
 				this.eachCell(function(x,y,cell,celldata) {
 					that.setCellData(x,y,gridData[y][x]);
 				});
+				this.updateGrid();
 			},
 			getAdjacentTiles:function(x,y) {
 				var tileList = [];
@@ -104,6 +122,24 @@
 				}
 				if(x < this.options.width -1) {
 					tileList.push({"x":x+1,"y":y});
+				}
+				return tileList;
+			},
+			getTilesInRadius:function(src,radius) {
+				var tileList = [];
+				//2 to 8
+				for(var x=src.x - radius;x<=src.x+radius;x++) {
+					if(x<0) continue;
+					if(x>this.options.width) continue;
+					var xDist = Math.abs(src.x - x);
+					//6 to 9
+					for(var y=src.y - radius;y<=src.y+radius;y++) {
+						if(y<0) continue;
+						if(y> this.options.height) continue;
+						var yDist = Math.abs(src.y - y);
+						if(Math.round(Math.sqrt(yDist*yDist + xDist * xDist)) > radius) continue;
+						tileList.push({"x":x,"y":y});
+					}
 				}
 				return tileList;
 			},
@@ -127,15 +163,76 @@
 				this.eachCell(function(x,y) {
 					var cellData = that.getCellData(x,y);
 					if(cellData.building=="solarpanel") {
+						//solar panels must be powered
+						if(cellData.powered != 1) {
+							cellData.powered = 1;
+							that.setCellAttribute(x,y,"powered",1);
+						}
+						//get cells within the radius of the solar panel
 						var radius = gameparams.buildings.solarpanel.radius[cellData.terrain];
+						var tileList = that.getTilesInRadius({"x":x,"y":y},radius);
+						//check N times for cells that are adjacent to a powered cell
+						for(var dist=0;dist<radius;dist++) {
+							for(var i in tileList) {	
+								var checkCellData = that.getCellData(tileList[i].x,tileList[i].y);
+								if(checkCellData.powered == 1 || checkCellData.building=="") continue;
+								var adjTiles = that.getAdjacentTiles(tileList[i].x,tileList[i].y);
+								//check if the tile is adjacent to a powered tile
+								for(var a in adjTiles) {
+									var aData = that.getCellData(adjTiles[a].x,adjTiles[a].y);
+									if(aData.powered==1) {
+										that.setCellAttribute(tileList[i].x,tileList[i].y,"powered",1);
+										break;
+									}
+								}
+							}
+						}
+						
+						
+						/*
 						that.matchTilesInRadius({"x":x,"y":y},null,radius,
 							function(x,y) {
 								if(that.getCellData(x,y).building=="") return false;
 								that.setCellAttribute(x,y,"powered",1);
 								return true;
+							});*/
+					}
+				});
+			},
+			checkExplorable:function() {
+				var that = this;
+				this.eachCell(function(x,y) {
+					var cellData = that.getCellData(x,y);
+					if(cellData.building=="ccenter") {
+						var radius = gameparams.buildings.ccenter.radius[cellData.terrain];
+						that.matchTilesInRadius({"x":x,"y":y},null,radius,
+							function(x,y) {
+								if(that.getCellData(x,y).explored==0) {
+									that.setCellAttribute(x,y,"canexplore",1);
+								}
+								return true;
 							});
 					}
 				});
+			},
+			updateGrid:function() {
+				this.checkPowered();
+				this.checkExplorable();
+			},
+			harvest:function() {
+				var that = this;
+				var totalMoney = 0;
+				//collect money from mines
+				this.eachCell(function(x,y) {
+					var data = that.getCellData(x,y);
+					if(data.building=="mine") {
+						if(data.powered == 1) {
+							totalMoney += gameparams.buildings.mine.income[data.terrain];
+						}
+					}
+				
+				});
+				return totalMoney;
 			},
 			setCellAttribute:function(x,y,name,value) {
 				var cellData = this.getCellData(x,y);

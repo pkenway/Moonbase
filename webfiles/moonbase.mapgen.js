@@ -45,7 +45,7 @@ function generateMap(gameparams) {
 		if(x==ccx&&y==ccy) continue;
 		if(mapResult[y][x].aliens ==1) continue;
 		
-		mapResult[y][x].aliens==1;
+		mapResult[y][x].aliens=1;
 		aliencount++;
 	}
 	
