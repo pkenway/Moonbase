@@ -17,6 +17,7 @@
 			Energy: <span class="energy"></span>
 			Turns Left: <span class="turn"></span>
 		</div>
+		<div id="divInfo">&nbsp;</div>
 		
 		<table id="buildings" style="float:right">
 			<tr>
@@ -35,12 +36,41 @@
 		
 		<a href="javascript:void(0)" id="btnNextTurn">Next Turn</a>
 		<a href="javascript:void(0)" id="btnFireLaser">Fire Laser</a>
+		<ul id="ulMessages"></ul>
 		<div id="divDebug"></div>
 		
 		<script type="text/javascript">
 			
 			function statusMsg(msg) {
-				$("#divDebug").html(msg);
+				var list = $("#ulMessages");
+				var newMsg = $("<li class='vis' style='opacity:0.0'></li>").text(msg);
+				
+				var cleanup = function() {
+					var len = list.children(".vis").length;
+					if(len > 5) {
+						$(list.children(".vis")[len-1]).removeClass("vis").addClass("hid");
+						
+						$(list.children(".hid")).animate(
+							{opacity:0.0},
+							{
+								duration:2000,
+								complete:
+								function() {
+									$(this).remove();
+								}
+							});
+					}
+				};
+				if(list.children().length==0) {
+					$(newMsg).appendTo(list).animate({opacity:1},{
+						duration:2000,
+						complete:cleanup});
+				} else {
+					newMsg.insertBefore(list.find("li:first-child")).animate({opacity:1},{
+						duration:2000,
+						complete:cleanup});
+				}
+				//$("#divDebug").html(msg);
 			}
 			
 			var isLaserFiring = false;
@@ -76,6 +106,18 @@
 						state.energy -= gameparams.laserenergycost;
 						return true;
 					},
+					artifactFound:function(artifact) {
+						statusMsg("You have discovered " + artifact.name +".  " + artifact.description);
+						
+						var state = $("#divState").playstate("getState");
+						state.turns += artifact.value.turns || 0;
+						state.money += artifact.value.money|| 0;
+						state.energy += artifact.value.energy || 0;
+						
+						if(artifact.value.explored_tiles) {
+							$("#tblGameGrid").gameboard("randomExplore",artifact.value.explored_tiles);
+						}
+					},
 					statusMsg:statusMsg,
 					gameparams:gameparams
 				});
@@ -101,7 +143,19 @@
 					}
 				});
 				
-				$("#buildings .building img").draggable({helper:"clone"});
+				$("#buildings .building img").draggable({helper:"clone"}).hover(
+					function(event) {
+						var buildingType = $(this).attr("title");
+						var tooltip = gameparams.buildings[buildingType].title + " - " + gameparams.buildings[buildingType].description + " (Cost: " + gameparams.buildings[buildingType].cost +")";
+						$("#divInfo").text(tooltip);
+						
+						
+					},
+					function(event) {
+						$("#divInfo").html("&nbsp;");
+					}
+				
+				);
 			});
 		</script>
 	</body>

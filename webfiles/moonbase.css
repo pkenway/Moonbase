@@ -1,6 +1,11 @@
 #tblGameGrid {
 	background-color:transparent;
 }
+#tblGameGrid td {
+	border:solid 1px white;
+	margin: 1px 1px 1px 1px;
+	padding: 1px 1px 1px 1px;
+}
 td.unexplored {
 	background-color:transparent;
 }
@@ -49,6 +54,8 @@ td.powerlines {
 body {
 	background-image :url('images/starsandnebula250a.jpg');
 	color:white;
+	font-face:Arial;
+	
 }
 
 .currentAction {
@@ -64,6 +71,14 @@ a:link{
 a:hover{
 	color:white;
 }
-a:visited{
+a:visited {
 	color:white;
+}
+#ulMessages li{
+	list-style-type:none;
+	background-color:white;
+	color:black;
+	font-family:Arial,Helvetica;
+	border:solid 1px red;
+	
 }

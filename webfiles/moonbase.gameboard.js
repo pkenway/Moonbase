@@ -7,7 +7,8 @@
 				statusMsg:function(text){},
 				tryBuy:function(cost){},
 				tryFireLaser:function(){},
-				action:function(type){}
+				action:function(type){},
+				artifactFound:function(artifact){}
 			},
 			_init: function() {
 				this.interfaceMode = "default";
@@ -21,25 +22,30 @@
 				var that = this;
 				this.element.find("td").click(function() {
 					var coords = that.getCoords(this);
-					console.log("clicked : " +coords.x + "," + coords.y);
 					switch(that.interfaceMode) {
 						case "laser":
+							that.interfaceMode="default";
 							var data = that.getCellData(coords.x,coords.y);
 							if(!data.explored) {
 								statusMsg("Unable to aquire target.  Scan target location first.");
+								return;
 							}
 							if(!data.aliens) {
 								statusMsg("No hostiles detected");
+								return;
 							}
-							if(that.options.tryFireLaser()) {
-								data.aliens =0;
-								that.setCellData(coords.x,coords.y,data);
-								statusMsg("Hostile life forms eradicated");
-							} else {
+							if(!that.options.tryFireLaser()) {
 								statusMsg("Not enough energy.");
+								return;
 							}
-							that.interfaceMode="default";
+							data.aliens =0;
+							that.setCellData(coords.x,coords.y,data);
+							statusMsg("Hostile life forms eradicated");
+							if(data.artifact) {
+								that.options.artifactFound(data.artifact);
+							}
 							that.options.action("laser");
+							
 							break;
 						default:
 							var celldata = that.getCellData(coords.x,coords.y);
@@ -48,6 +54,8 @@
 								that.setCellData(coords.x,coords.y,celldata);
 								if(celldata.aliens==1) {
 									statusMsg("Hostile life forms detected");
+								} else if(celldata.artifact !=null) {
+									that.options.artifactFound(celldata.artifact);
 								}
 								that.options.action("explore");
 							}
@@ -74,7 +82,7 @@
 							statusMsg("Not enough money.");
 							return;
 						}
-						if(cellData.terrain=="gorge") {
+						if(cellData.terrain=="gorge" && buildingType != "powerlines") {
 							statusMsg("Cannot build on in that terrain.");
 							return;
 						}
@@ -189,8 +197,11 @@
 				}
 			},
 			checkPowered:function() {
-				$(this).find("td").removeClass("powered");
 				var that = this;
+				$(this).find("td").removeClass("powered");
+				this.eachCell(function(x,y) {
+					that.setCellAttribute(x,y,"powered",0);
+				});
 				//find all solar panels and mark them as powered
 				this.eachCell(function(x,y) {
 					var cellData = that.getCellData(x,y);
@@ -301,9 +312,11 @@
 								if(newCellData.building != "") {
 									statusMsg("Hostile life forms have damaged our base.");
 									newCellData.building = "";
+									newCellData.powered = 0;
 								}
 								newCellData.aliens = 1;
 								that.setCellData(tileToInfest.x,tileToInfest.y,newCellData);
+								that.updateGrid();
 							}
 						
 						}
@@ -330,6 +343,19 @@
 				this.eachCell(function(x,y) {
 					that.setCellAttribute(x,y,"explored",1);
 				});
+			},
+			randomExplore:function(count) {
+				var attempts = 0;
+				var explored = 0;
+				while(explored < count && attempts < (this.options.width * this.options.height)) {
+					attempts++;
+					var x = Math.floor(Math.random()*this.options.width);
+					var y = Math.floor(Math.random()*this.options.height);
+					var cellData = this.getCellData(x,y);
+					if(cellData.explored == 1) continue;
+					this.setCellAttribute(x,y,"explored",1);
+					explored++;
+				}
 			}
 		});
 })(jQuery);
